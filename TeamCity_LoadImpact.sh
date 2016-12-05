@@ -86,6 +86,7 @@ done
 
 #show results
 echo "##teamcity[progressMessage 'Show results']"
+echo "##teamcity[buildStatisticValue key='maxVULoadTime' value='$maxVULoadTime']"
 echo "Max VU Load Time: $maxVULoadTime"
 echo "Full results at https://app.loadimpact.com/test-runs/$tid"
 
