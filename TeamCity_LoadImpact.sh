@@ -2,11 +2,11 @@
 # Run Load Impact test from bash
 
 # Load Impact test id
-testId="3557507"
+testId="YOUR_TEST_ID"
 
 # API_KEY from your Load Impact account
 # Don't forget to keep the : at the end
-API_KEY="5a437e1c5a78984e5da038bb0ab68438203d476849e96284bd5170c2450f798d"
+API_KEY="YOUR_API_KEY"
 
 uri="https://api.loadimpact.com/v2/test-configs/$testId/start"
 
