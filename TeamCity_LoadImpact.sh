@@ -79,6 +79,7 @@ until [[ $(echo "$percentage==100" | bc -l) == 1 ]]; do
 
   if [[ $(echo "$maxVULoadTime>1000" | bc -l) == 1 ]] ; then 
     perc="VU Load Time exceeded limit of 1 sec: $maxVULoadTime"
+    echo "##teamcity[buildStatisticValue key='maxVULoadTime' value='$maxVULoadTime']"
     echo "##teamcity[buildProblem description='$perc']"
     exit 0
   fi
