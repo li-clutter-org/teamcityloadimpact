@@ -36,7 +36,8 @@ Everything is plain default, no specific settings needed to run a Load Impact pe
 
 We set up two build steps for this configuration, both do the same thing. Assuming you are running a TeamCity build agent on Windows you can run a PowerShell script to execute Load Impact Performance tests as part of your build.
 
-The other build step runs a Bash script as the build step using the built in SSH Exec runner.
+The other build step runs a Bash script as the build step using the built in SSH Exec runner. You can see how to do that in [teamcityloadimpacy/TC_bash.md]
+(https://github.com/loadimpact/teamcityloadimpact/blob/master/TC_bash.md)
 
 Both use [TeamCity Service Messages](https://confluence.jetbrains.com/display/TCD10/Build+Script+Interaction+with+TeamCity#BuildScriptInteractionwithTeamCity-ReportingTests) to communicate status and result to TeamCity.
 
