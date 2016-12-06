@@ -255,9 +255,3 @@ You can add/update/delete tests, user scenarios and data stores using the API an
 
 To dive deeper into using Load Impact from your CI/CD process (or for that matter any external usage) see our [*comprehensive API reference*](http://developers.loadimpact.com/api/) and the accompanying [*CLI*](http://support.loadimpact.com/knowledgebase/articles/833856-automating-load-testing-with-the-load-impact-api).
 
-**Contact us today and we’ll throw in a free, one-hour consultation to help you get up and running quickly.**
-
-(CTA button: Learn more? Get started now / talk live)
-
-(is Drift installed on these pages?)
-
