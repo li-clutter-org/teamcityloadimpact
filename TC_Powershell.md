@@ -86,12 +86,65 @@ The code has four parts, the initial and then three stages “Kickoff performanc
 
 The initial part of the PowerShell code is where you set the test id and the API key.
 
+```PowerShell
+<# Load Impact test id #>
+$testId = YOUR_TEST_ID_HERE
+<# API_KEY from your Load Impact account #>
+$API_KEY = "YOUR_API_KEY_HERE" + ":"
+
+$auth = 'Basic ' + [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($API_KEY))
+```
+
 So replace “YOUR\_TEST\_ID\_HERE” with your test id, just the number – not a string.
 
 And replace “YOUR\_API\_KEY\_HERE” with your API key. Keep inside the quotes (it is a string) and remember to keep the ‘**:**’ added at the end. It is basic AUTH, the username is the API key with a blank password and that is why we base 64 encode the authorization for later use.
 
 3b Kick off a performance test
 ==============================
+
+```PowerShell
+$uri = "https://api.loadimpact.com/v2/test-configs/" + $testId + "/start"
+
+Write-Host "##teamcity[testStarted name='Load Impact performance test']"
+Write-Host "##teamcity[progressMessage 'Kickoff performance test']"
+
+<# try-catch because PS considers all 400+ codes to be errors and will exit if returned #>
+$resp = $null
+try {
+  $resp = Invoke-WebRequest -uri $uri -Method Post -Headers @{'Authorization'=$auth}
+} catch {}
+
+<# Status 201 expected, 200 is just a current running test id #>
+
+if ($resp.StatusCode -ne 201) {
+  $perc = "Could not start test " + $testId + ": " + $resp.StatusCode + "`n" + $resp.Content
+  Write-Host "##teamcity[buildProblem description='$perc']" 
+  return
+}
+
+$js = ConvertFrom-Json -InputObject $resp.Content
+
+$tid = $js.id
+
+<# Until 5 minutes timout or status is running   #> 
+
+$t = 0
+$uri = "https://api.loadimpact.com/v2/tests/" + $tid + "/"
+do {
+  Start-Sleep -Seconds 10
+  $resp = Invoke-WebRequest -uri $uri -Method Get -Headers @{'Authorization'=$auth}
+  $j = ConvertFrom-Json -InputObject $resp.Content
+  $status_text = $j.status_text
+  $t = $t + 10
+
+  if ($t -gt 300) {
+    Write-Host "##teamcity[buildProblem description='Timeout - test start > 5 min']" 
+    return
+  }
+} until ($status_text -eq "Running")
+
+Write-Host "##teamcity[progressMessage 'Performance test running']"
+```
 
 We kick off the performance test by gluing together the URI for the [API to start the test](http://developers.loadimpact.com/api/#post-test-configs-id-start) and then send service messages to TeamCity on the status of the test.
 
@@ -110,6 +163,42 @@ The last thing we do is to send a service message to TeamCity that the test is r
 3c The test is running
 ======================
 
+```PowerShell
+<# wait until completed #>
+
+$maxVULoadTime = 0.0
+$percentage = 0.0
+$uri = "https://api.loadimpact.com/v2/tests/" + $tid + "/results?ids=__li_progress_percent_total"
+$uril = "https://api.loadimpact.com/v2/tests/" + $tid + "/results?ids=__li_user_load_time"
+do {
+  Start-Sleep -Seconds 30
+
+  <# Get percent completed #>
+  $resp = Invoke-WebRequest -uri $uri -Method Get -Headers @{'Authorization'=$auth}
+  $j = ConvertFrom-Json -InputObject $resp.Content
+
+  <# Since -Last 1 will get TWO on occassion we sort and get the first which will always get 1 #>
+  $percentage = ($j.__li_progress_percent_total | Sort value -Descending | Select-Object -First 1).value
+
+  Write-Host "##teamcity[progressMessage 'Percentage completed $percentage']"
+
+  <# Get VU Load Time #>
+  $resp = Invoke-WebRequest -uri $uril -Method Get -Headers @{'Authorization'=$auth}
+  $j = ConvertFrom-Json -InputObject $resp.Content
+
+  <# Sort and get the highest value #>
+  $maxVULoadTime = ($j.__li_user_load_time | Sort value -Descending | Select-Object -First 1).value
+
+  if ($maxVULoadTime -gt 1000) {
+    $perc = "VU Load Time exceeded limit of 1 sec: " + $maxVULoadTime
+    Write-Host "##teamcity[buildStatisticValue key='maxVULoadTime' value='$maxVULoadTime']"
+    Write-Host "##teamcity[buildProblem description='$perc']"
+    return
+  }
+
+} until ([double]$percentage -eq 100.0)
+```
+
 So now your Load Impact performance test is running!
 
 This time we wait until the test has completed, reached the percentage completed value of 100% with a slightly longer sleep between refreshing status calls.
@@ -126,6 +215,14 @@ If the value exceeds 1 second we exit the build step and fail the build by sendi
 
 3d Show the results
 ===================
+
+```PowerShell
+<# show results #>
+Write-Host "##teamcity[progressMessage 'Show results']"
+Write-Host "##teamcity[buildStatisticValue key='maxVULoadTime' value='$maxVULoadTime']"
+"Max VU Load Time: " + $maxVULoadTime
+"Full results at https://app.loadimpact.com/test-runs/" + $tid
+```
 
 Finally, we show the results and output the max VU Load Time. It can of course be any result but as a sample. We report the max VU load time as a custom statistics value as well to TeamCity so we can make a snazzy custom graph out of it as well. Once you have executed the build once it will show up in the list of available values to [make a custom graph from](https://confluence.jetbrains.com/display/TCD10/Custom+Chart).
 
