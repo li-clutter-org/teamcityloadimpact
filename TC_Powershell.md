@@ -78,7 +78,7 @@ Now you need to know which test to run. You can list your test configurations us
 
 So now you have a test id for the test you want to run in your build pipeline and your API key.
 
-All of the code is shared at Github for your download in the [loadimpact/teamcityloadimpact](https://github.com/loadimpact/jenkinsloadimpact) repo!
+All of the code is shared at Github for your download in the [loadimpact/teamcityloadimpact](https://github.com/loadimpact/teamcityloadimpact) repo!
 
 3a Edit the script to set the test Id and the API key
 =====================================================
